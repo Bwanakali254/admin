@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Package, 
   PlusCircle, 
-  ShoppingCart, 
   MessageSquare, 
   Mail,
   X
@@ -15,7 +14,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/products/add', icon: PlusCircle, label: 'Add Product' },
     { path: '/products', icon: Package, label: 'Products' },
-    { path: '/orders', icon: ShoppingCart, label: 'Orders' },
     { path: '/inquiries', icon: MessageSquare, label: 'Inquiries' },
     { path: '/contacts', icon: Mail, label: 'Contacts' },
   ]

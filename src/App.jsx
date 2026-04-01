@@ -9,8 +9,8 @@ import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import AddProduct from './pages/AddProduct'
+import EditProduct from './pages/EditProduct'
 import Products from './pages/Products'
-import Orders from './pages/Orders'
 import Inquiries from './pages/Inquiries'
 import Contacts from './pages/Contacts'
 
@@ -29,8 +29,8 @@ const AdminRoutes = ({ token, setToken }) => {
           <Routes>
             <Route path="/" element={<Dashboard token={token} />} />
             <Route path="/products/add" element={<AddProduct token={token} />} />
+            <Route path="/products/edit/:id" element={<EditProduct token={token} />} />
             <Route path="/products" element={<Products token={token} />} />
-            <Route path="/orders" element={<Orders token={token} />} />
             <Route path="/inquiries" element={<Inquiries token={token} />} />
             <Route path="/contacts" element={<Contacts token={token} />} />
           </Routes>

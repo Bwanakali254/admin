@@ -1,5 +1,5 @@
 import React from 'react'
-import { assets } from '../assets/assets'
+import logo from '../assets/logo.svg'
 import { Menu, LogOut } from 'lucide-react'
 
 const Navbar = ({ setToken, setSidebarOpen }) => {
@@ -19,7 +19,7 @@ const Navbar = ({ setToken, setSidebarOpen }) => {
           <Menu className="w-6 h-6" />
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-2xl">☀️</span>
+          <img src={logo} alt="Sun Mega" className="w-8 h-8" />
           <h1 className="font-bold text-lg text-green-600">Sun Mega Admin</h1>
         </div>
       </div>

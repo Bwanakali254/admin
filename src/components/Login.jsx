@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import axios from 'axios'
+import { motion } from 'framer-motion'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
 
@@ -229,13 +230,15 @@ const Login = ({ setToken }) => {
                   />
                 </div>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={isLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Signing In...' : 'Sign In'}
-                </button>
+                </motion.button>
               </form>
 
               <p className="text-xs text-center mt-6 text-gray-600">
@@ -285,13 +288,15 @@ const Login = ({ setToken }) => {
                   />
                 </div>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={isLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Resetting...' : 'Reset Password'}
-                </button>
+                </motion.button>
               </form>
             </>
           )}
@@ -325,13 +330,15 @@ const Login = ({ setToken }) => {
                   />
                 </div>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={isLoading || otp.length !== 6}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Verifying...' : 'Verify & Login'}
-                </button>
+                </motion.button>
               </form>
 
               <p className="text-xs text-center mt-4 text-gray-600">

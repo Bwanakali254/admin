@@ -1,23 +1,32 @@
-import React, { useState } from 'react'
-import axios from 'axios'
+import React, { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import axios from 'axios'
 import { backendUrl } from '../App'
 import { useToast } from '../hooks/useToast'
-import { Upload, X, Plus, Minus } from 'lucide-react'
+import { Upload, X, Plus, Minus, ArrowLeft } from 'lucide-react'
 
-const AddProduct = ({ token }) => {
+const EditProduct = ({ token }) => {
+  const { id } = useParams()
+  const navigate = useNavigate()
   const { formActions } = useToast()
+  
   const [images, setImages] = useState([null, null, null, null])
+  const [existingImages, setExistingImages] = useState([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('batteries')
-  const [subCategory, setSubCategory] = useState(['battery-pack-series'])
+  const [subCategory, setSubCategory] = useState([])
   const [brand, setBrand] = useState('Sun Mega')
   const [features, setFeatures] = useState([''])
   const [specifications, setSpecifications] = useState([{ key: '', value: '' }])
   const [downloads, setDownloads] = useState([{ name: '', file: null }])
-  const [loading, setLoading] = useState(false)
+  const [existingDownloads, setExistingDownloads] = useState([])
+  const [fetchLoading, setFetchLoading] = useState(true)
 
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173'
+
+  // Category options
   const categories = [
     { value: 'batteries', label: 'Batteries' },
     { value: 'single-phase', label: 'Single-Phase Products' },
@@ -37,6 +46,50 @@ const AddProduct = ({ token }) => {
     ]
   }
 
+  useEffect(() => {
+    fetchProduct()
+  }, [id, token])
+
+  const fetchProduct = async () => {
+    try {
+      setFetchLoading(true)
+      const response = await axios.get(`${backendUrl}/api/product/${id}`, {
+        headers: { token }
+      })
+
+      if (response.data.success) {
+        const product = response.data.product
+        setName(product.name || '')
+        setDescription(product.description || '')
+        setCategory(product.category || 'batteries')
+        setSubCategory(product.subCategory || [])
+        setBrand(product.brand || 'Sun Mega')
+        setFeatures(product.features?.length ? product.features : [''])
+        setExistingImages(product.image || [])
+        setExistingDownloads(product.downloads || [])
+        setDownloads([{ name: '', file: null }])
+        
+        // Convert specifications Map to array
+        if (product.specifications) {
+          const specsArray = Object.entries(product.specifications).map(([key, value]) => ({
+            key,
+            value
+          }))
+          setSpecifications(specsArray.length ? specsArray : [{ key: '', value: '' }])
+        }
+      } else {
+        formActions.fetch.error('product data')
+        navigate('/products')
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error)
+      formActions.fetch.error('product data')
+      navigate('/products')
+    } finally {
+      setFetchLoading(false)
+    }
+  }
+
   const handleImageChange = (index, file) => {
     const newImages = [...images]
     newImages[index] = file
@@ -47,6 +100,10 @@ const AddProduct = ({ token }) => {
     const newImages = [...images]
     newImages[index] = null
     setImages(newImages)
+  }
+
+  const removeExistingImage = (index) => {
+    setExistingImages(existingImages.filter((_, i) => i !== index))
   }
 
   const handleSubCategoryToggle = (sub) => {
@@ -79,8 +136,11 @@ const AddProduct = ({ token }) => {
     newDownloads[index].name = file.name
     setDownloads(newDownloads)
   }
+
+  const removeExistingDownload = (index) => {
+    setExistingDownloads(existingDownloads.filter((_, i) => i !== index))
+  }
   const removeSpec = (index) => setSpecifications(specifications.filter((_, i) => i !== index))
-  const addSpec = () => setSpecifications([...specifications, { key: '', value: '' }])
   const updateSpec = (index, field, value) => {
     const newSpecs = [...specifications]
     newSpecs[index][field] = value
@@ -93,6 +153,7 @@ const AddProduct = ({ token }) => {
     
     try {
       const formData = new FormData()
+      formData.append('id', id)
       formData.append('name', name)
       formData.append('description', description)
       formData.append('category', category)
@@ -100,12 +161,20 @@ const AddProduct = ({ token }) => {
       formData.append('brand', brand || 'Sun Mega')
       formData.append('features', JSON.stringify(features.filter(f => f)))
       
+      // Keep existing images
+      formData.append('image', JSON.stringify(existingImages.filter(img => img)))
+      
+      // Convert specifications to object
       const specsObj = {}
       specifications.forEach(({ key, value }) => {
         if (key && value) specsObj[key] = value
       })
       formData.append('specifications', JSON.stringify(specsObj))
 
+      // Keep existing downloads
+      formData.append('existingDownloads', JSON.stringify(existingDownloads))
+
+      // Append new downloads
       downloads.forEach((download) => {
         if (download.file) {
           formData.append('downloads', download.file)
@@ -113,7 +182,7 @@ const AddProduct = ({ token }) => {
       })
 
       const response = await axios.post(
-        backendUrl + '/api/product/add',
+        backendUrl + '/api/product/update',
         formData,
         { 
           headers: { 
@@ -124,20 +193,13 @@ const AddProduct = ({ token }) => {
       )
 
       if (response.data.success) {
-        formActions.add.success('Product')
-        setName('')
-        setDescription('')
-        setImages([null, null, null, null])
-        setCategory('batteries')
-        setSubCategory(['battery-pack-series'])
-        setBrand('Sun Mega')
-        setFeatures([''])
-        setDownloads([{ name: '', file: null }])
+        formActions.update.success('Product')
+        navigate('/products')
       } else {
-        formActions.add.error('product')
+        formActions.update.error('product')
       }
     } catch (error) {
-      formActions.add.error('product')
+      formActions.update.error('product')
     } finally {
       setLoading(false)
     }
@@ -145,16 +207,61 @@ const AddProduct = ({ token }) => {
 
   const inputStyle = 'w-full mt-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
 
+  if (fetchLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-800">Add Solar Product</h2>
-        <p className="text-gray-500 text-sm">Create a new product for Sun Mega Limited (Inquiry-based)</p>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('/products')}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">Edit Product</h2>
+          <p className="text-gray-500 text-sm">Update product details</p>
+        </div>
       </div>
 
       <form onSubmit={onSubmitHandler} className="bg-white rounded-2xl shadow-sm p-8 space-y-10">
+        {/* Images */}
         <div>
-          <h4 className="font-medium mb-3 text-gray-700">Product Images (Max 4)</h4>
+          <h4 className="font-medium mb-3 text-gray-700">Product Images</h4>
+          
+          {/* Existing Images */}
+          {existingImages.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">Current Images:</p>
+              <div className="flex flex-wrap gap-4">
+                {existingImages.map((img, index) => (
+                  <div key={`existing-${index}`} className="relative">
+                    <img
+                      src={img.startsWith('http') ? img : `${frontendUrl}${img}`}
+                      alt={`Current ${index + 1}`}
+                      className="w-24 h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* New Images */}
+          <p className="text-sm text-gray-500 mb-2">Add New Images:</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {images.map((img, index) => (
               <div key={index} className="relative">
@@ -163,7 +270,7 @@ const AddProduct = ({ token }) => {
                     {img ? (
                       <img
                         src={URL.createObjectURL(img)}
-                        alt={`Product ${index + 1}`}
+                        alt={`New ${index + 1}`}
                         className="object-cover w-full h-full"
                       />
                     ) : (
@@ -196,6 +303,7 @@ const AddProduct = ({ token }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* Left Column */}
           <div className="space-y-5">
             <div>
               <label className="text-sm font-medium text-gray-700">Product Name *</label>
@@ -247,17 +355,16 @@ const AddProduct = ({ token }) => {
             </div>
           </div>
 
+          {/* Right Column */}
           <div className="space-y-5">
             <div>
               <label className="text-sm font-medium text-gray-700">Sub Categories</label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {subCategoryOptions[category]?.map(sub => (
-                  <motion.button
+                  <button
                     key={sub}
                     type="button"
                     onClick={() => handleSubCategoryToggle(sub)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     className={`px-3 py-1 rounded-full text-sm transition ${
                       subCategory.includes(sub)
                         ? 'bg-green-600 text-white'
@@ -265,11 +372,12 @@ const AddProduct = ({ token }) => {
                     }`}
                   >
                     {sub.replace(/-/g, ' ')}
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
 
+            {/* Features */}
             <div>
               <label className="text-sm font-medium text-gray-700">Features</label>
               <div className="mt-2 space-y-2">
@@ -306,8 +414,33 @@ const AddProduct = ({ token }) => {
               </div>
             </div>
 
+            {/* Downloads */}
             <div>
               <label className="text-sm font-medium text-gray-700">Downloads / Documents</label>
+              
+              {/* Existing Downloads */}
+              {existingDownloads.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 mb-2">Current Downloads:</p>
+                  <div className="space-y-2">
+                    {existingDownloads.map((download, index) => (
+                      <div key={`existing-download-${index}`} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                        <span className="text-gray-700">{download.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingDownload(index)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded transition"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* New Downloads */}
+              <p className="text-sm text-gray-500 mb-2">Add New Downloads:</p>
               <div className="mt-2 space-y-2">
                 {downloads.map((download, index) => (
                   <div key={index} className="flex gap-2 items-start">
@@ -355,6 +488,7 @@ const AddProduct = ({ token }) => {
               </div>
             </div>
 
+            {/* Specifications */}
             <div>
               <label className="text-sm font-medium text-gray-700">Specifications</label>
               <div className="mt-2 space-y-2">
@@ -399,7 +533,16 @@ const AddProduct = ({ token }) => {
           </div>
         </div>
 
-        <div className="pt-4">
+        <div className="pt-4 flex gap-3">
+          <motion.button
+            type="button"
+            onClick={() => navigate('/products')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-8 py-3 rounded-xl font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+          >
+            Cancel
+          </motion.button>
           <motion.button
             type="submit"
             disabled={loading}
@@ -411,7 +554,7 @@ const AddProduct = ({ token }) => {
                 : 'bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg'
             }`}
           >
-            {loading ? 'Adding...' : 'Add Product'}
+            {loading ? 'Updating...' : 'Update Product'}
           </motion.button>
         </div>
       </form>
@@ -419,4 +562,4 @@ const AddProduct = ({ token }) => {
   )
 }
 
-export default AddProduct
+export default EditProduct

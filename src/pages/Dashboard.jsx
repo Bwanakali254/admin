@@ -4,17 +4,14 @@ import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
 import { 
   Package, 
-  ShoppingCart, 
   MessageSquare, 
   Mail,
-  TrendingUp,
-  Users
+  TrendingUp
 } from 'lucide-react'
 
 const Dashboard = ({ token }) => {
   const [stats, setStats] = useState({
     products: 0,
-    orders: 0,
     inquiries: 0,
     contacts: 0
   })
@@ -26,16 +23,14 @@ const Dashboard = ({ token }) => {
 
   const fetchStats = async () => {
     try {
-      const [productsRes, ordersRes, inquiriesRes, contactsRes] = await Promise.all([
+      const [productsRes, inquiriesRes, contactsRes] = await Promise.all([
         axios.get(backendUrl + '/api/product/list', { headers: { token } }),
-        axios.get(backendUrl + '/api/order/list', { headers: { token } }),
         axios.get(backendUrl + '/api/inquiry/list', { headers: { token } }),
         axios.get(backendUrl + '/api/contact/list', { headers: { token } })
       ])
 
       setStats({
         products: productsRes.data.products?.length || 0,
-        orders: ordersRes.data.orders?.length || 0,
         inquiries: inquiriesRes.data.inquiries?.length || 0,
         contacts: contactsRes.data.contacts?.length || 0
       })
@@ -48,7 +43,6 @@ const Dashboard = ({ token }) => {
 
   const statCards = [
     { label: 'Total Products', value: stats.products, icon: Package, color: 'bg-blue-500' },
-    { label: 'Total Orders', value: stats.orders, icon: ShoppingCart, color: 'bg-green-500' },
     { label: 'Inquiries', value: stats.inquiries, icon: MessageSquare, color: 'bg-yellow-500' },
     { label: 'Contact Messages', value: stats.contacts, icon: Mail, color: 'bg-purple-500' },
   ]
