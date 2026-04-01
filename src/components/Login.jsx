@@ -243,7 +243,7 @@ const Login = ({ setToken }) => {
 
               <p className="text-xs text-center mt-6 text-gray-600">
                 Need help? Contact{' '}
-                <span className="text-green-600">quote@sunmega.co.ke</span>
+                <span className="text-green-600">quotes@sunmega.co.ke</span>
               </p>
             </>
           )}
